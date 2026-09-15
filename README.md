@@ -1,12 +1,10 @@
 <div align="center">
 
-🧠 Neural Networks, Understood
+🧠 Neural Networks, Actually Explained
 
-From a single neuron to hidden layers, backpropagation & Adam
+Neurons → Hidden Layers → ReLU → Loss → Backpropagation → Adam
 
-A visual-first TensorFlow learning note — focused on why each piece exists.
-
-<br>
+A beginner-friendly mental model for understanding what is actually happening inside a neural network.
 
 
 
@@ -15,232 +13,201 @@ A visual-first TensorFlow learning note — focused on why each piece exists.
 
 </div>
 
-⚡ The Entire Idea in 20 Seconds
+🎯 What I Wanted to Understand
 
-Raw Input
-   │
-   ▼
-┌───────────────┐
-│    Neurons    │  ← weights decide what relationships matter
-└───────┬───────┘
-        ▼
-┌───────────────┐
-│ Hidden Layer  │  ← multiple neurons build useful representations
-└───────┬───────┘
-        ▼
-┌───────────────┐
-│ ReLU / Other  │  ← adds non-linearity
-└───────┬───────┘
-        ▼
-     Prediction
-        │
-        ▼
-       Loss      ← how wrong were we?
-        │
-        ▼
- Backpropagation ← calculate gradients
-        │
-        ▼
-       Adam      ← use gradients to update parameters
-        │
-        └───────────────► repeat 🔁
+When I first saw this:
 
-Mental model: Neurons transform data → hidden layers build representations → loss measures the mistake → backprop finds gradients → Adam improves the weights.
+model = keras.Sequential([
+    keras.Input(shape=(2,)),
+    keras.layers.Dense(8, activation="relu"),
+    keras.layers.Dense(1, activation="sigmoid")
+])
 
-🗺️ Roadmap
+I didn't want to just memorize the syntax.
 
-Stage
+I wanted to understand:
 
-Question we are answering
+Why do we need neurons? What does a hidden layer actually do? Why ReLU? What does backpropagation calculate? And where does Adam come into all of this?
 
-🧩 Neuron
+This README is my answer to those questions.
 
-How does one neuron process input?
+🗺️ The Whole Story in One Diagram
 
-🧠 Multiple Neurons
+flowchart LR
+    A["📥 Input"] --> B["🧠 Neurons"]
+    B --> C["⚡ Activation"]
+    C --> D["🔮 Prediction"]
+    D --> E["📉 Loss"]
+    E --> F["↩️ Backpropagation"]
+    F --> G["📐 Gradients"]
+    G --> H["🚀 Adam"]
+    H --> I["🔧 Update Weights"]
+    I -. "repeat" .-> B
 
-Why isn't one neuron enough?
+Forward pass makes the prediction.
+Loss measures the mistake.
+Backpropagation calculates gradients.
+Adam uses those gradients to update the weights.
 
-🕵️ Hidden Layer
+01 — 🧠 Start With One Neuron
 
-What happens between input and output?
+A neuron is basically a small mathematical function.
 
-⚡ ReLU
+It receives some inputs:
 
-Why do hidden layers need non-linearity?
+x₁, x₂, x₃ ...
 
-❌ XOR
+Every input gets a weight:
 
-What can multiple neurons do that one linear rule cannot?
+w₁, w₂, w₃ ...
 
-📉 Loss
-
-How does the network know it is wrong?
-
-↩️ Backpropagation
-
-How do we find which weights caused the error?
-
-🧭 Gradient
-
-In which direction should a parameter move?
-
-🚀 Adam
-
-How are those parameters actually updated?
-
-01 — Start With One Neuron
-
-A neuron is basically a learnable mathematical function.
-
-It receives inputs:
-
-x₁ ──┐
-x₂ ──┼──► [ NEURON ] ──► output
-x₃ ──┘
-
-and calculates:
+Then the neuron adds a bias.
 
 $$
 z = w_1x_1 + w_2x_2 + w_3x_3 + b
 $$
 
-or more compactly:
+Or simply:
 
 $$
 z = Wx+b
 $$
 
-Tiny example
+Tiny Example
 
-Inputs   → x₁ = 2,   x₂ = 3
-Weights  → w₁ = 0.5, w₂ = 0.2
-Bias     → b = 1
+x₁ = 2      w₁ = 0.5
+x₂ = 3      w₂ = 0.2
+bias = 1
 
-Therefore:
-
-$$
-z=(2\times0.5)+(3\times0.2)+1=2.6
-$$
-
-So what is actually learned?
-
-x = data              → given by us
-w = weights           → learned
-b = bias              → learned
-
-The weights control how strongly each input affects this neuron.
-
-02 — Why Do We Need Multiple Neurons?
-
-This was the important question:
-
-If one neuron already has weights and bias, why create 4, 10, 100 neurons?
-
-Because one neuron gives us only one learned transformation of the input.
-
-Imagine three inputs:
-
-Hours Studied ───┐
-Attendance ──────┼──► ONE neuron ──► one signal
-Previous Score ──┘
-
-Now use four neurons:
-
-                    ┌──► Neuron 1 ──► h₁
-                    │
-3 Input Features ───┼──► Neuron 2 ──► h₂
-                    │
-                    ├──► Neuron 3 ──► h₃
-                    │
-                    └──► Neuron 4 ──► h₄
-
-Every neuron sees the same inputs, but owns different weights:
+So:
 
 $$
-h_1=f(W_1x+b_1)
+z=(2\times0.5)+(3\times0.2)+1
 $$
 
 $$
-h_2=f(W_2x+b_2)
+z=2.6
 $$
 
-$$
-h_3=f(W_3x+b_3)
-$$
+That's it.
 
-So the network gets multiple different views / transformations of the same data.
+The neuron transformed:
 
-💡 Core Idea
-
-Dense(4) doesn't mean 4 data points.
-It means 4 neurons → 4 learned output signals.
-
-03 — What Is a Hidden Layer Really Doing?
-
-keras.layers.Dense(4, activation="relu")
-
-means:
-
-Input
-  │
-  ▼
-┌──────────────────────────────┐
-│         HIDDEN LAYER         │
-│                              │
-│  N₁    N₂    N₃    N₄       │
-│  │     │     │     │        │
-│  h₁    h₂    h₃    h₄       │
-└──────────────┬───────────────┘
-               │
-               ▼
-        Next Layer / Output
-
-The hidden layer's job is to turn:
-
-raw features
+[2, 3]
 
 into:
 
-more useful internal features / representations
+2.6
 
-For example:
+💡 Mental Model
+
+Weights decide what information matters and how strongly it matters.
+
+02 — 🤔 Why More Than One Neuron?
+
+Suppose the input has:
+
+x₁ = study hours
+x₂ = attendance
+x₃ = previous score
+
+One neuron calculates only one weighted transformation:
 
 $$
-[x_1,x_2,x_3]
+z=w_1x_1+w_2x_2+w_3x_3+b
 $$
 
-may become:
+But what if the relationship is more complicated?
 
-$$
-[h_1,h_2,h_3,h_4]
-$$
+Give the same input to multiple neurons:
 
-The next layer no longer has to work directly with only the original input — it can work with the representation created by the hidden neurons.
+                    INPUT
+               [x₁, x₂, x₃]
+                     │
+          ┌──────────┼──────────┐
+          │          │          │
+          ▼          ▼          ▼
+       Neuron 1   Neuron 2   Neuron 3
+          │          │          │
+          ▼          ▼          ▼
+         h₁         h₂         h₃
 
-Important
+Each neuron has different weights and bias.
 
-A neuron does not necessarily learn a clean human-readable concept such as:
+So they can produce different transformations of the same data.
 
-Neuron 1 = attendance detector
-Neuron 2 = study detector
+In TensorFlow
 
-That is only a useful intuition.
+keras.layers.Dense(4)
 
-Real neural networks often learn representations distributed across many neurons.
+means:
 
-04 — Then What Exactly Does ReLU Do?
+4 neurons
 
-The neuron first calculates:
+NOT:
+
+❌ 4 features
+❌ 4 samples
+❌ 4 epochs
+
+If the input contains 3 features:
+
+3 inputs
+   ↓
+Dense(4)
+   ↓
+4 outputs
+
+03 — 🕵️ What Is a Hidden Layer?
+
+A hidden layer is simply a layer between the input and output.
+
+INPUT
+  │
+  ▼
+┌─────────────────────┐
+│    HIDDEN LAYER     │
+│                     │
+│  ●   ●   ●   ●      │
+└─────────────────────┘
+  │
+  ▼
+OUTPUT
+
+Why is it useful?
+
+Because instead of forcing the model to directly learn:
+
+Raw Input ───────────────► Answer
+
+we allow it to learn:
+
+Raw Input
+    │
+    ▼
+Useful Internal Representation
+    │
+    ▼
+Answer
+
+🔑 Core Idea
+
+A hidden layer transforms the original features into new representations that can make the final problem easier to solve.
+
+This is one of the most important ideas in neural networks.
+
+04 — ⚡ Where Does ReLU Come In?
+
+First the neuron calculates:
 
 $$
 z=Wx+b
 $$
 
-Then ReLU calculates:
+Then ReLU is applied:
 
 $$
-ReLU(z)=\max(0,z)
+ReLU(z)=max(0,z)
 $$
 
 So:
@@ -269,59 +236,49 @@ After ReLU
 
 9
 
-Visually:
+Think of it like:
 
 Neuron calculation
-       │
-       ▼
+        │
+        ▼
        z
-       │
-       ▼
-    ┌──────┐
-    │ ReLU │
-    └──┬───┘
-       │
-   ┌───┴─────────────┐
-   │                 │
-z ≤ 0             z > 0
-   │                 │
-   ▼                 ▼
-   0                 z
+        │
+        ▼
+     ┌──────┐
+     │ ReLU │
+     └──────┘
+        │
+   ┌────┴────┐
+   │         │
+ z <= 0     z > 0
+   │         │
+   ▼         ▼
+   0         z
 
-Weights + bias decide what relationship the neuron responds to.
-ReLU changes the neuron's response by clipping negative values to zero and introduces non-linearity.
+But there is an important distinction:
 
-That second part is crucial.
+ReLU does not decide which pattern the neuron looks for.
 
-05 — Why Does Non-Linearity Matter?
+The weights + bias determine how the neuron responds to the input.
 
-Suppose we stack only linear transformations:
+ReLU then changes that response by removing negative activation.
 
-$$
-h=W_1x+b_1
-$$
+Better Mental Model
 
-then:
+Weights + Bias
+      │
+      ▼
+"What relationship does this neuron respond to?"
+      │
+      ▼
+     ReLU
+      │
+      ▼
+"Should this activation continue forward?"
 
-$$
-y=W_2h+b_2
-$$
+05 — 🔥 Why Activation Functions Matter
 
-Substitute the first equation:
-
-$$
-y=W_2(W_1x+b_1)+b_2
-$$
-
-which can again be written as:
-
-$$
-y=W'x+b'
-$$
-
-😐 Still linear.
-
-So:
+Imagine multiple layers without ReLU:
 
 Linear
   ↓
@@ -329,11 +286,11 @@ Linear
   ↓
 Linear
 
-can collapse into effectively:
+Even after stacking them, the whole transformation is still linear.
 
-ONE linear transformation
+So adding layers alone is not enough.
 
-But:
+Now:
 
 Linear
   ↓
@@ -343,19 +300,19 @@ Linear
   ↓
 ReLU
 
-cannot generally be collapsed into one linear equation.
+The network becomes capable of representing nonlinear relationships.
 
-That's where much of the expressive power comes from.
+And this leads us to the perfect example...
 
-06 — XOR: The Cleanest Hidden-Layer Example
+06 — 🧩 XOR: Why Hidden Neurons Are Useful
 
-Consider:
+Consider XOR:
 
 x₁
 
 x₂
 
-XOR
+Output
 
 0
 
@@ -381,13 +338,13 @@ XOR
 
 0
 
-We want output 1 only when the inputs are different.
+The output is 1 only when the two inputs are different.
 
-A single linear rule cannot separate these four original input points correctly.
+A plain linear model on the original features cannot represent XOR with one straight decision boundary.
 
-Let's build two hidden neurons manually
+But let's create two hidden neurons.
 
-🟣 Hidden Neuron 1
+🧠 Hidden Neuron 1
 
 $$
 h_1=ReLU(x_1-x_2)
@@ -397,11 +354,12 @@ Weights:
 
 [1, -1]
 
-This activates for:
+It activates here:
 
-[1, 0]
+x₁ = 1
+x₂ = 0
 
-🟢 Hidden Neuron 2
+🧠 Hidden Neuron 2
 
 $$
 h_2=ReLU(x_2-x_1)
@@ -411,23 +369,20 @@ Weights:
 
 [-1, 1]
 
-This activates for:
+It activates here:
 
-[0, 1]
+x₁ = 0
+x₂ = 1
 
-Watch the representation change
+Watch the Hidden Layer Transform the Data
 
 Input
 
-h₁
+h₁ = ReLU(x₁-x₂)
 
-h₂
-
-h₁ + h₂
+h₂ = ReLU(x₂-x₁)
 
 [0,0]
-
-0
 
 0
 
@@ -439,15 +394,11 @@ h₁ + h₂
 
 1
 
-1
-
 [1,0]
 
 1
 
 0
-
-1
 
 [1,1]
 
@@ -455,140 +406,205 @@ h₁ + h₂
 
 0
 
-0
+Now the output neuron only needs:
 
-🔥 That's XOR.
+$$
+y=h_1+h_2
+$$
 
-          x₁,x₂
-            │
-       ┌────┴────┐
-       ▼         ▼
- ReLU(x₁-x₂)  ReLU(x₂-x₁)
-       │         │
-       h₁        h₂
-       └────┬────┘
-            ▼
-         h₁ + h₂
-            │
-            ▼
-           XOR
+Result:
 
-This is the important insight:
+[0,0] → 0
+[0,1] → 1
+[1,0] → 1
+[1,1] → 0
 
-The hidden neurons transformed a difficult representation into one where the output became easy to compute.
+🎯 XOR solved.
 
-The exact weights learned during real training do not have to match these hand-designed weights.
+What Actually Happened?
 
-07 — Neural Network vs Traditional Machine Learning
+ORIGINAL SPACE
 
-Neural networks are not automatically better.
+[0,0]
+[0,1]
+[1,0]
+[1,1]
 
-Problem
+       │
+       │ Hidden neurons + ReLU
+       ▼
 
-Often a strong starting point
+NEW REPRESENTATION
 
-Small tabular dataset
+[0,0]
+[0,1]
+[1,0]
+[0,0]
 
-Logistic Regression / Trees / Boosting
+       │
+       ▼
 
-Simple linear relationship
+Easy Output
+
+This is the part I wanted to understand:
+
+The hidden neurons didn't magically know XOR. They transformed the inputs into a representation where the final answer became easy to produce.
+
+The exact weights learned by a trained network may be different. These weights are hand-designed only to make the concept visible.
+
+07 — 🤖 Neural Network vs Traditional ML
+
+This is where an important misconception needs to disappear:
+
+❌ "Neural networks are better than machine learning models."
+
+Not necessarily.
+
+Neural networks are also machine learning models.
+
+Traditional models such as:
 
 Linear Regression
+Logistic Regression
+Decision Tree
+Random Forest
+SVM
 
-Hand-engineered structured features
+can be excellent — especially for structured/tabular data.
 
-Traditional ML can be excellent
+The Real Difference
 
-Images
+A simple linear model might learn:
 
-Neural Networks / CNNs
+$$
+y=w_1x_1+w_2x_2+b
+$$
 
-Audio
+If we manually add useful features:
 
-Neural Networks
+$$
+x^2,\quad x_1x_2,\quad \sin(x)
+$$
 
-Language
+then even a linear model can represent nonlinear relationships with respect to the original inputs.
 
-Neural Networks / Transformers
+That is feature engineering.
 
-Complex representation learning
+Neural networks instead can learn many useful transformations during training:
 
-Neural Networks
-
-The real difference
-
-Traditional ML often looks like:
-
-Raw Data
-   │
-   ▼
-Human Feature Engineering
-   │
-   ▼
-ML Model
-   │
-   ▼
+Raw Features
+     │
+     ▼
+Hidden Layer
+     │
+     ▼
+Learned Representation
+     │
+     ▼
+Hidden Layer
+     │
+     ▼
+Better Representation
+     │
+     ▼
 Prediction
 
-Deep learning often pushes more of the representation learning into the model:
+When Neural Networks Shine
 
-Raw Data
-   │
-   ▼
-Hidden Layers
-   │
-   ▼
-Learned Representations
-   │
-   ▼
-Prediction
+They become especially useful for problems involving:
 
-Neural networks become especially valuable when learning the representation itself is a major part of the problem.
+🖼️ Images
 
-08 — The Model Predicted Something. Now What?
+🗣️ Audio
+
+🎥 Video
+
+📝 Natural language
+
+📈 Large datasets
+
+🧩 Complex nonlinear relationships
+
+🔎 Representation learning
+
+For small tabular datasets, traditional ML can often be the better choice.
+
+08 — 🎯 The Model Makes a Prediction... Now What?
 
 Suppose:
 
 Actual     = 1
-Prediction = 0.31
+Prediction = 0.30
 
-The network needs a number telling it:
+The network needs some way to measure:
 
 How bad was that prediction?
 
-That's the loss.
+That's the job of the loss function.
 
-For regression, one common example is Mean Squared Error:
+09 — 📉 Loss Function
+
+For regression, one common loss is Mean Squared Error:
 
 $$
-MSE=\frac{1}{n}\sum(y-\hat y)^2
+MSE=\frac{1}{n}\sum(y_{actual}-y_{pred})^2
 $$
 
-For binary classification, we commonly use:
+Example:
+
+Actual     = 100
+Prediction = 90
+
+Error:
+
+100 - 90 = 10
+
+Squared error:
+
+10² = 100
+
+For binary classification, a common loss is:
 
 loss="binary_crossentropy"
 
-Loss does not fix the model.
+Mental Model
 
-It only measures the mistake.
+Loss is the model's mistake score.
 
-09 — Backpropagation: Who Caused the Mistake?
+Good Prediction → Small Loss
+Bad Prediction  → Large Loss
 
-Now we have a loss.
+But knowing that we're wrong is not enough.
 
-The network contains many parameters:
+We now need to know:
 
-w₁
-w₂
-w₃
-...
-biases
+Which weights caused the mistake, and how should they change?
 
-We need to know:
+10 — ↩️ Backpropagation
 
-How did each parameter affect the loss?
+This is where backpropagation enters.
 
-Backpropagation computes derivatives such as:
+The prediction happened forward:
+
+Input
+  ↓
+Hidden Layer
+  ↓
+Output
+  ↓
+Prediction
+
+Now information about the error moves backward:
+
+Loss
+  ↓
+Output Layer
+  ↓
+Hidden Layer
+  ↓
+Earlier Parameters
+
+Backpropagation calculates derivatives such as:
 
 $$
 \frac{\partial Loss}{\partial w}
@@ -596,34 +612,37 @@ $$
 
 These derivatives are the gradients.
 
-Prediction
-    │
-    ▼
-   Loss
-    │
-    ▼
-Backpropagation
-    │
-    ▼
-Gradients for every parameter
+🔑 Important
 
-Backpropagation calculates gradients. It does not itself define the optimizer's update rule.
+Backpropagation calculates gradients.
+Backpropagation is NOT the optimizer.
 
-10 — What Does a Gradient Tell Us?
+11 — 📐 What Is a Gradient?
 
 A gradient answers:
 
-If I change this parameter slightly, how will the loss change?
+If I change this weight slightly, how does the loss change?
 
-Example:
+For one weight:
 
 $$
-\frac{\partial Loss}{\partial w}=+5
+gradient=\frac{\partial Loss}{\partial w}
 $$
 
-The loss is increasing in the positive direction around the current point.
+Conceptually:
 
-A basic gradient-descent update is:
+              LOSS
+               ▲
+              / \
+             /   \
+            /     \
+-----------●--------------► Weight
+           ↑
+      Current weight
+
+The gradient tells us the local slope.
+
+A basic gradient descent update is:
 
 $$
 w_{new}=w_{old}-\eta\frac{\partial Loss}{\partial w}
@@ -631,100 +650,139 @@ $$
 
 where:
 
-$$
-\eta = learning\ rate
-$$
+η = learning rate
 
-So the gradient gives the optimizer the local slope information needed to improve the parameter.
+So now we know:
 
-11 — Where Does Adam Enter?
+Loss
+  ↓
+Backpropagation
+  ↓
+Gradients
 
-This was another key distinction:
+But something still has to use those gradients.
 
-Backpropagation ≠ Adam
+That's the optimizer.
 
-They have different jobs.
+12 — 🔧 What Is an Optimizer?
+
+An optimizer decides how the model parameters should be updated using the gradients.
+
+The simplest idea:
+
+Current Weight
+      │
+      + Gradient
+      + Learning Rate
+      │
+      ▼
+Updated Weight
+
+Common optimizers include:
+
+SGD
+Adam
+RMSprop
+
+13 — 🚀 So What Exactly Is Adam?
+
+Adam = Adaptive Moment Estimation
+
+Adam receives the gradients calculated through backpropagation.
+
+It then uses information from the current and previous gradients to make adaptive parameter updates.
+
+Very simplified:
+
+                 Gradient
+                    │
+          ┌─────────┴─────────┐
+          ▼                   ▼
+  Gradient history     Squared-gradient history
+          │                   │
+          └─────────┬─────────┘
+                    ▼
+                   ADAM
+                    │
+                    ▼
+             Weight Update
+
+Adam maintains moving estimates related to:
+
+the gradients
+
+the squared gradients
+
+This helps it adapt the update size for individual parameters.
+
+14 — ⚔️ Backpropagation vs Adam
+
+This distinction is worth memorizing.
 
 Backpropagation
-
-"Give me the gradients."
 
 Adam
 
-"Now that I have the gradients,
- how should I update each parameter?"
+Calculates gradients
 
-Complete flow:
+Uses gradients
 
-Forward Pass
-     │
-     ▼
- Prediction
-     │
-     ▼
-    Loss
-     │
-     ▼
-Backpropagation
-     │
-     ▼
-  Gradients
-     │
-     ▼
-    Adam
-     │
-     ▼
-Updated Weights & Biases
+Uses chain rule
 
-12 — Why Adam Instead of a Basic Update?
+Optimization algorithm
 
-Basic gradient descent looks roughly like:
+Tells how parameters affect loss
 
-$$
-w_{new}=w_{old}-learning_rate\times gradient
-$$
+Decides parameter updates
 
-Adam is more sophisticated.
+Does not choose the full update strategy
 
-It keeps moving estimates related to:
+Updates weights and biases
 
-gradients
+In One Line
 
-squared gradients
+Backpropagation → "What are the gradients?"
 
-This helps it adapt parameter updates during training.
+Adam            → "Cool. Now how should I use them?"
 
-You don't need to memorize Adam's full equation yet.
+15 — 🔄 One Complete Training Step
 
-For now:
-
-Backprop tells Adam what the gradients are. Adam uses that information plus running gradient statistics to decide the parameter updates.
-
-13 — Put Everything Together
+Now everything connects.
 
 flowchart TD
-    A[Input Data] --> B[Neurons: Wx + b]
-    B --> C[Activation: ReLU]
-    C --> D[Hidden Representation]
-    D --> E[Output Layer]
-    E --> F[Prediction]
-    F --> G[Loss]
-    G --> H[Backpropagation]
-    H --> I[Gradients]
-    I --> J[Adam Optimizer]
-    J --> K[Update Weights & Biases]
-    K --> B
+    A["📥 Training Data"] --> B["Forward Pass"]
+    B --> C["🔮 Prediction"]
+    C --> D["📉 Calculate Loss"]
+    D --> E["↩️ Backpropagation"]
+    E --> F["📐 Gradients"]
+    F --> G["🚀 Adam Optimizer"]
+    G --> H["🔧 Update Weights & Biases"]
+    H --> I["Next Training Step"]
 
-This loop is training.
+Or in plain language:
 
-14 — TensorFlow Version
+1. Give data to network
+          ↓
+2. Network predicts
+          ↓
+3. Calculate how wrong it was
+          ↓
+4. Backpropagation calculates gradients
+          ↓
+5. Adam receives gradients
+          ↓
+6. Adam updates weights and biases
+          ↓
+7. Repeat
+
+That's training.
+
+16 — 💻 TensorFlow Example
 
 import tensorflow as tf
 from tensorflow import keras
 import numpy as np
 
-# Features:
-# [hours_studied, attendance, previous_score]
 
 X = np.array([
     [1, 50, 35],
@@ -737,7 +795,7 @@ X = np.array([
     [2, 90, 80]
 ], dtype=np.float32)
 
-# 0 = Fail, 1 = Pass
+
 y = np.array([
     [0],
     [0],
@@ -749,21 +807,30 @@ y = np.array([
     [1]
 ], dtype=np.float32)
 
+
 model = keras.Sequential([
     keras.Input(shape=(3,)),
 
-    # 4 neurons create a hidden representation
-    keras.layers.Dense(4, activation="relu"),
+    # Multiple neurons create hidden representations
+    keras.layers.Dense(
+        4,
+        activation="relu"
+    ),
 
     # Binary classification output
-    keras.layers.Dense(1, activation="sigmoid")
+    keras.layers.Dense(
+        1,
+        activation="sigmoid"
+    )
 ])
+
 
 model.compile(
     optimizer="adam",
     loss="binary_crossentropy",
     metrics=["accuracy"]
 )
+
 
 model.fit(
     X,
@@ -772,90 +839,137 @@ model.fit(
     verbose=0
 )
 
-test_data = np.array([
-    [6, 85, 70],
-    [2, 50, 35],
-    [5, 80, 60]
-], dtype=np.float32)
-
-predictions = model.predict(test_data)
-
-print(predictions)
-
-15 — Read This TensorFlow Code Like English
+Read This Architecture Like English
 
 keras.Input(shape=(3,))
 
-Every sample contains 3 features.
+Each sample contains 3 features.
 
 Dense(4, activation="relu")
 
-Create 4 hidden neurons.
-Each neuron gets all 3 features, owns different weights/bias, and passes its result through ReLU.
+Give those 3 features to 4 different neurons, then apply ReLU to their outputs.
 
 Dense(1, activation="sigmoid")
 
-Combine the hidden representation into one binary-classification output between 0 and 1.
+Combine the hidden representation into one binary-classification probability.
+
+optimizer="adam"
+
+Use Adam to update the trainable parameters.
 
 loss="binary_crossentropy"
 
 Measure how wrong the binary prediction is.
 
-optimizer="adam"
+17 — 🧠 The Mental Model I Actually Want to Remember
 
-Use the gradients produced during training to update the parameters.
+                    RAW INPUT
+                        │
+                        ▼
+               ┌─────────────────┐
+               │     NEURONS     │
+               │                 │
+               │  Wx + b         │
+               └────────┬────────┘
+                        │
+                        ▼
+               ┌─────────────────┐
+               │      ReLU       │
+               │                 │
+               │ max(0, x)       │
+               └────────┬────────┘
+                        │
+                        ▼
+              HIDDEN REPRESENTATION
+                        │
+                        ▼
+                   PREDICTION
+                        │
+                        ▼
+                     LOSS
+                        │
+                        ▼
+               BACKPROPAGATION
+                        │
+                        ▼
+                    GRADIENTS
+                        │
+                        ▼
+                      ADAM
+                        │
+                        ▼
+              BETTER PARAMETERS
+                        │
+                        └───────↺
 
-model.fit(...)
+🧩 Final Cheat Sheet
 
-Repeat forward pass → loss → backpropagation → optimizer updates across the training data.
+Concept
 
-🧠 Final Mental Model
+What it actually does
 
-Don't memorize isolated definitions.
+Neuron
 
-Remember the reason each component exists:
+Calculates Wx + b
 
-┌──────────────────────────────────────────────────────┐
-│ NEURON                                               │
-│ Learn one weighted transformation of its inputs      │
-├──────────────────────────────────────────────────────┤
-│ MULTIPLE NEURONS                                     │
-│ Learn multiple transformations in parallel           │
-├──────────────────────────────────────────────────────┤
-│ HIDDEN LAYER                                         │
-│ Build a useful internal representation               │
-├──────────────────────────────────────────────────────┤
-│ ReLU                                                 │
-│ Add non-linearity; negative activation becomes zero  │
-├──────────────────────────────────────────────────────┤
-│ OUTPUT LAYER                                         │
-│ Turn the representation into a prediction            │
-├──────────────────────────────────────────────────────┤
-│ LOSS                                                 │
-│ Measure the prediction error                         │
-├──────────────────────────────────────────────────────┤
-│ BACKPROPAGATION                                      │
-│ Calculate gradients                                  │
-├──────────────────────────────────────────────────────┤
-│ GRADIENT                                             │
-│ Describe how loss changes with each parameter        │
-├──────────────────────────────────────────────────────┤
-│ ADAM                                                 │
-│ Use gradients to update weights and biases           │
-└──────────────────────────────────────────────────────┘
+Weights
+
+Control how strongly inputs influence the neuron
+
+Bias
+
+Shifts the neuron's calculation
+
+Dense(n)
+
+Creates n neurons
+
+Hidden Layer
+
+Builds intermediate representations
+
+ReLU
+
+Adds nonlinearity by applying max(0, x)
+
+Sigmoid
+
+Maps a value into the 0–1 range
+
+Loss
+
+Measures prediction error
+
+Backpropagation
+
+Calculates gradients using the chain rule
+
+Gradient
+
+Shows how loss changes with a parameter
+
+Optimizer
+
+Uses gradients to update parameters
+
+Adam
+
+Adaptive optimizer using gradient statistics
+
+Epoch
+
+One complete pass through the training dataset
+
+⚡ The Entire Neural Network in One Sentence
+
+Neurons transform the input, hidden layers build useful representations, activation functions introduce nonlinearity, the network makes a prediction, loss measures the mistake, backpropagation calculates the gradients, and Adam uses those gradients to improve the weights.
 
 <div align="center">
 
-One sentence worth remembering
+🚀 Learning Deep Learning From First Principles
 
-Neural networks learn useful representations with neurons, measure mistakes with loss, find gradients with backpropagation, and improve their parameters with an optimizer such as Adam.
+Don't memorize the model. Understand what every line is doing.
 
-<br>
-
-Input → Representation → Prediction → Error → Gradient → Update → Repeat
-
-🚀 Next
-
-Learning Rate → Epochs & Batches → Train/Test Split → Overfitting → Dropout
+Neuron → Dense → Hidden Layer → Activation → Loss → Backprop → Adam
 
 </div>
